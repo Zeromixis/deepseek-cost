@@ -1,0 +1,3 @@
+- insert:
+    - id: deepseek-cost
+      name: 'deepseek-cost'

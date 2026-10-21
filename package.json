@@ -1,0 +1,44 @@
+{
+  "name": "deepseek-cost",
+  "version": "1.5.1",
+  "type": "module",
+  "description": "在输入框下方的 Token 用量旁显示以人民币估算的会话费用，点击可查看当前模型的价格清单并从官方页面更新价格。",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zeromixis/deepseek-cost.git"
+  },
+  "homepage": "https://github.com/Zeromixis/deepseek-cost#readme",
+  "keywords": [
+    "dsh",
+    "deepseek",
+    "deepseek-harness",
+    "cost",
+    "token"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "cost.js",
+    "pricing-source.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-conversation"]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "title": "deepseek-cost",
+    "description": "在输入框下方的 Token 用量旁显示以人民币估算的会话费用，点击可查看当前模型的价格清单，从 DeepSeek 官方页面更新价格并保存到本地。"
+  },
+  "cost": {
+    "title": "会话费用估算",
+    "estimate": "根据 Token 用量和 DeepSeek 官方人民币价格估算，非最终账单。"
+  }
+}
