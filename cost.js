@@ -116,10 +116,15 @@ export function getFetchedPricing() {
   return fetchedPricing
 }
 
+/** Whether a provider route belongs to the DeepSeek account/API family. */
+export function isDeepSeekProvider(provider) {
+  return typeof provider === 'string' && provider.toLowerCase().startsWith('deepseek')
+}
+
 /** Resolve the published price entry for one provider/model route. */
 export function priceFamily(provider, model) {
   if (typeof provider !== 'string' || typeof model !== 'string') return undefined
-  if (provider !== 'deepseek' && provider !== 'deepseek-account') return undefined
+  if (!isDeepSeekProvider(provider)) return undefined
   const fetched = fetchedPricing?.[model]
   if (fetched !== undefined) return fetched
   const family = MODEL_FAMILIES.get(model)

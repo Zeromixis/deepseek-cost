@@ -384,7 +384,7 @@ window.__ModuleLoader__.load({
         setOpen(true)
         if (!autoRefreshTried.current) {
           autoRefreshTried.current = true
-          if (cost.pricingCached !== true) void refreshPrices()
+          if (cost.pricingCached !== true || cost.prices === null) void refreshPrices()
         }
       }
 

@@ -5,8 +5,10 @@ import { dirname, join } from 'node:path'
 import {
   applyEvent,
   createCostState,
+  isDeepSeekProvider,
   markPricingCached,
   passthroughSchema,
+  priceList,
   projectCost,
   setFetchedPricing,
 } from './cost.js'
@@ -33,18 +35,20 @@ function resolveProfileDir() {
 }
 
 const CACHE_PATH = join(resolveProfileDir(), 'data', 'deepseek-cost', 'pricing.json')
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 let refreshInFlight = null
 
 function loadCachedPricing() {
   try {
     const cache = JSON.parse(readFileSync(CACHE_PATH, 'utf8'))
-    if (cache?.version !== 1 || cache.models === undefined) return false
-    if (!setFetchedPricing(cache.models)) return false
+    if (cache?.version !== 1 || cache.models === undefined) return { loaded: false }
+    if (!setFetchedPricing(cache.models)) return { loaded: false }
     markPricingCached(true)
-    return true
+    const updatedAt = typeof cache.updatedAt === 'string' ? Date.parse(cache.updatedAt) : NaN
+    return { loaded: true, updatedAt: Number.isFinite(updatedAt) ? updatedAt : 0 }
   } catch {
     // A missing or partial cache simply leaves the built-in table active.
-    return false
+    return { loaded: false }
   }
 }
 
@@ -102,7 +106,10 @@ function reply(res, status, payload) {
 }
 
 export function apply(ctx) {
-  const cacheLoaded = loadCachedPricing()
+  const cache = loadCachedPricing()
+  const cacheStale = !cache.loaded
+    || cache.updatedAt === 0
+    || Date.now() - cache.updatedAt > CACHE_TTL_MS
 
   ctx.effect(() => ctx.sessionProjections.register({
     key: 'deepseekCost',
@@ -116,11 +123,27 @@ export function apply(ctx) {
     stateVersion: 4,
   }), 'deepseek-cost: session cost projection')
 
-  if (!cacheLoaded) {
+  ctx.effect(() => ctx.on('session/event', (_session, event) => {
+    let provider
+    let model
+    if (event?.type === 'model/selection') {
+      provider = event.data?.provider
+      model = event.data?.model
+    } else if (event?.type === 'request/header') {
+      provider = event.data?.header?.config?.provider
+      model = event.data?.header?.config?.model
+    } else {
+      return
+    }
+    if (!isDeepSeekProvider(provider) || priceList(provider, model) !== null) return
+    void refreshPricing(ctx).catch(() => {})
+  }), 'deepseek-cost: refresh prices for an unknown model')
+
+  if (cacheStale) {
     ctx.effect(() => {
       void refreshPricing(ctx).catch(() => {})
       return () => {}
-    }, 'deepseek-cost: first-run price refresh')
+    }, 'deepseek-cost: price refresh')
   }
 
   ctx.effect(() => ctx.webServer.register({
