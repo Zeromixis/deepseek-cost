@@ -75,7 +75,7 @@ DSH 的 **Add plugin** 支持直接填写 Git 仓库地址。
 1. 下载 Release 安装包：
 
    ```text
-   https://github.com/Zeromixis/deepseek-cost/releases/download/v1.6.0/deepseek-cost-1.6.0.tgz
+   https://github.com/Zeromixis/deepseek-cost/releases/download/v1.6.1/deepseek-cost-1.6.1.tgz
    ```
 
 2. 打开 **Plugins → Add plugin**。
@@ -86,12 +86,12 @@ DSH 的 **Add plugin** 支持直接填写 Git 仓库地址。
 
 适合把安装包用 U 盘或网盘带到另一台电脑。
 
-1. 把 `deepseek-cost-1.6.0.tgz` 复制到目标电脑。
+1. 把 `deepseek-cost-1.6.1.tgz` 复制到目标电脑。
 2. 打开 **Plugins → Add plugin**。
 3. 填写 tarball 的**绝对路径**，例如：
 
    ```text
-   C:\Users\你的用户名\Downloads\deepseek-cost-1.6.0.tgz
+   C:\Users\你的用户名\Downloads\deepseek-cost-1.6.1.tgz
    ```
 
 4. 点击 **Install**。

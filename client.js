@@ -13,7 +13,8 @@ window.__ModuleLoader__.load({
       'cost.unknown': '当前模型暂无可用价格。',
       'cost.aria': '会话费用估算（人民币）：{amount}。打开模型价格清单。',
       'cost.pricesTitle': '模型价格',
-      'cost.sessionTotal': '本会话：{amount}',
+      'cost.sessionLabel': '本会话费用',
+      'cost.currentPeriod': '当前',
       'cost.unit': '人民币 / 百万 tokens',
       'cost.inputHit': '输入 · 缓存命中',
       'cost.inputMiss': '输入 · 缓存未命中',
@@ -66,7 +67,7 @@ window.__ModuleLoader__.load({
       position: 'fixed',
       zIndex: 1200,
       boxSizing: 'border-box',
-      padding: '12px 14px',
+      padding: '14px 16px 12px',
       color: 'var(--dsw-alias-label-primary)',
       background: 'var(--dsw-specific-menu)',
       backdropFilter: 'var(--dsw-menu-backdrop-filter)',
@@ -76,85 +77,173 @@ window.__ModuleLoader__.load({
       fontSize: 13,
       lineHeight: '20px',
       overflowY: 'auto',
+      overflowX: 'hidden',
     }
-    const panelTopStyle = {
+    const headerStyle = {
       display: 'flex',
-      alignItems: 'baseline',
-      justifyContent: 'space-between',
-      gap: 12,
+      alignItems: 'center',
+      gap: 10,
+    }
+    const iconWrapStyle = {
+      display: 'grid',
+      placeItems: 'center',
+      flex: 'none',
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      background: 'var(--dsw-alias-interactive-bg-hover)',
+      color: 'var(--dsw-alias-brand-primary)',
+      fontSize: 19,
+      fontWeight: 700,
+      lineHeight: 1,
+    }
+    const eyebrowStyle = {
+      flex: 1,
+      minWidth: 0,
       color: 'var(--dsw-alias-label-tertiary)',
+      fontSize: 11,
+      lineHeight: '16px',
+      letterSpacing: '0.04em',
+    }
+    const sessionPillStyle = {
+      display: 'flex',
+      flex: 'none',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      gap: 0,
+      padding: '3px 8px',
+      border: '1px solid var(--dsw-alias-border-l1)',
+      borderRadius: 8,
+      background: 'var(--dsw-alias-bg-layer-1)',
+    }
+    const sessionLabelStyle = {
+      color: 'var(--dsw-alias-label-caption)',
+      fontSize: 10,
+      lineHeight: '13px',
+    }
+    const sessionValueStyle = {
+      color: 'var(--dsw-alias-label-primary)',
       fontSize: 12,
-      lineHeight: '18px',
+      fontWeight: 600,
+      fontVariantNumeric: 'tabular-nums',
+      lineHeight: '16px',
     }
     const modelNameStyle = {
-      marginTop: 2,
+      marginTop: 11,
       overflow: 'hidden',
-      fontSize: 15,
+      fontSize: 17,
       fontWeight: 600,
-      lineHeight: '22px',
+      lineHeight: '24px',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
     }
+    const unitRowStyle = {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+      marginTop: 2,
+    }
     const unitStyle = {
-      marginTop: 1,
-      color: 'var(--dsw-alias-label-caption)',
-      fontSize: 12,
-      lineHeight: '18px',
-    }
-    const tableStyle = {
-      display: 'grid',
-      gridTemplateColumns: 'minmax(0, 1fr) 86px 86px',
-      columnGap: 8,
-      marginTop: 10,
-      paddingTop: 8,
-      borderTop: '1px solid var(--dsw-alias-border-l1)',
-      fontVariantNumeric: 'tabular-nums',
-    }
-    const headStyle = {
-      paddingBottom: 4,
       color: 'var(--dsw-alias-label-caption)',
       fontSize: 11,
-      lineHeight: '16px',
+      lineHeight: '17px',
+    }
+    const periodChipStyle = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      flex: 'none',
+      gap: 5,
+      padding: '2px 7px',
+      borderRadius: 999,
+      background: 'var(--dsw-alias-interactive-bg-hover)',
+      fontSize: 10,
+      lineHeight: '15px',
+    }
+    const periodDotStyle = {
+      width: 5,
+      height: 5,
+      borderRadius: '50%',
+      background: 'currentColor',
+      flex: 'none',
+    }
+    const tableCardStyle = {
+      marginTop: 12,
+      overflow: 'hidden',
+      border: '1px solid var(--dsw-alias-border-l1)',
+      borderRadius: 10,
+      background: 'var(--dsw-alias-bg-layer-1)',
+      fontVariantNumeric: 'tabular-nums',
+    }
+    const tableHeadStyle = {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr) 88px 88px',
+      padding: '7px 10px',
+      background: 'var(--dsw-alias-bg-layer-2)',
+    }
+    const tableRowStyle = {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr) 88px 88px',
+      alignItems: 'center',
+      padding: '8px 10px',
+      borderTop: '1px solid var(--dsw-alias-border-l1)',
+    }
+    const tableHeadLabelStyle = {
+      color: 'var(--dsw-alias-label-caption)',
+      fontSize: 10,
+      fontWeight: 500,
+      letterSpacing: '0.02em',
+      lineHeight: '14px',
+    }
+    const tableHeadPriceStyle = {
+      color: 'var(--dsw-alias-label-caption)',
+      fontSize: 10,
+      fontWeight: 600,
+      lineHeight: '14px',
       textAlign: 'right',
     }
     const rowLabelStyle = {
-      padding: '5px 0',
-      color: 'var(--dsw-alias-label-secondary)',
-      lineHeight: '18px',
       overflowWrap: 'anywhere',
-      whiteSpace: 'normal',
+      color: 'var(--dsw-alias-label-secondary)',
+      fontSize: 12,
+      lineHeight: '18px',
     }
     const rowPriceStyle = {
-      padding: '5px 0',
+      color: 'var(--dsw-alias-label-secondary)',
+      fontSize: 12,
+      lineHeight: '18px',
       textAlign: 'right',
       whiteSpace: 'nowrap',
     }
     const noteStyle = {
-      marginTop: 8,
-      paddingTop: 8,
-      borderTop: '1px solid var(--dsw-alias-border-l1)',
+      marginTop: 10,
+      padding: '8px 10px',
+      borderRadius: 8,
+      background: 'var(--dsw-alias-bg-layer-1)',
       color: 'var(--dsw-alias-label-caption)',
       fontSize: 11,
-      lineHeight: '17px',
+      lineHeight: '16px',
     }
     const footerStyle = {
       display: 'flex',
       alignItems: 'center',
       gap: 10,
-      marginTop: 8,
-      paddingTop: 8,
-      borderTop: '1px solid var(--dsw-alias-border-l1)',
+      marginTop: 10,
     }
     const updateButtonStyle = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 6,
       flex: 'none',
-      padding: '4px 10px',
+      padding: '5px 11px',
       border: '1px solid var(--dsw-alias-border-l2)',
-      borderRadius: 'var(--dsw-radius-sm)',
+      borderRadius: 999,
       background: 'var(--dsw-alias-interactive-bg-hover)',
       color: 'var(--dsw-alias-label-primary)',
       font: 'inherit',
-      fontSize: 12,
-      lineHeight: '18px',
+      fontSize: 11,
+      fontWeight: 500,
+      lineHeight: '16px',
       cursor: 'pointer',
     }
     const updateStatusStyle = {
@@ -176,6 +265,41 @@ window.__ModuleLoader__.load({
 
     function formatRate(value) {
       return Number.isFinite(value) ? `¥${value.toFixed(2)}` : '—'
+    }
+
+    const SHANGHAI_CLOCK = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Shanghai',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+
+    function isPeakNow() {
+      const parts = SHANGHAI_CLOCK.formatToParts(new Date())
+      const weekday = parts.find(part => part.type === 'weekday')?.value
+      const hour = Number(parts.find(part => part.type === 'hour')?.value)
+      const minute = Number(parts.find(part => part.type === 'minute')?.value)
+      if (weekday === 'Sat' || weekday === 'Sun') return false
+      const minutes = hour * 60 + minute
+      return (minutes >= 9 * 60 && minutes < 12 * 60)
+        || (minutes >= 14 * 60 && minutes < 18 * 60)
+    }
+
+    function RefreshIcon() {
+      return h('svg', {
+        viewBox: '0 0 16 16',
+        width: 12,
+        height: 12,
+        fill: 'none',
+        stroke: 'currentColor',
+        strokeWidth: 1.5,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+        'aria-hidden': true,
+      },
+        h('path', { d: 'M13.2 8a5.2 5.2 0 1 1-1.55-3.68' }),
+        h('path', { d: 'M13.2 2.8v4h-4' }))
     }
 
     // Locale registration can lag one render behind; never leak a raw key.
@@ -205,6 +329,29 @@ window.__ModuleLoader__.load({
       const prices = fetched ?? cost.prices
       const shownModelName = fetched?.name ?? cost.modelName ?? cost.model ?? '—'
       const label = text('cost.pricesTitle')
+      const peakNow = isPeakNow()
+      const periodColor = peakNow
+        ? 'var(--dsw-alias-state-warn-primary)'
+        : 'var(--dsw-alias-state-success-primary)'
+      const priceStyle = active => active
+        ? { ...rowPriceStyle, color: 'var(--dsw-alias-label-primary)', fontWeight: 600 }
+        : rowPriceStyle
+      const headPriceStyle = active => active
+        ? { ...tableHeadPriceStyle, color: periodColor }
+        : tableHeadPriceStyle
+      const priceRow = (key, labelText, rates) => h('div', {
+        key,
+        style: tableRowStyle,
+      },
+        h('span', { style: rowLabelStyle }, labelText),
+        h('span', { style: priceStyle(!peakNow) }, formatRate(rates.offPeak)),
+        h('span', { style: priceStyle(peakNow) }, formatRate(rates.peak)))
+      const statusColor = status?.kind === 'error'
+        ? 'var(--dsw-alias-state-error-primary)'
+        : status?.kind === 'success'
+          ? 'var(--dsw-alias-state-success-primary)'
+          : 'var(--dsw-alias-label-caption)'
+
       const panel = h('div', {
         ref: panelRef,
         role: 'dialog',
@@ -218,31 +365,37 @@ window.__ModuleLoader__.load({
           maxHeight: position.maxHeight,
         },
       },
-        h('div', { style: panelTopStyle },
-          h('span', null, label),
-          h('span', { style: { fontVariantNumeric: 'tabular-nums' } },
-            text('cost.sessionTotal', { amount: formatCny(cost.totalCny) }))),
+        h('div', { style: headerStyle },
+          h('span', { style: iconWrapStyle }, '¥'),
+          h('span', { style: eyebrowStyle }, label),
+          h('span', { style: sessionPillStyle },
+            h('span', { style: sessionLabelStyle }, text('cost.sessionLabel')),
+            h('span', { style: sessionValueStyle }, formatCny(cost.totalCny)))),
         h('div', { style: modelNameStyle, title: cost.model ?? undefined },
           shownModelName),
-        h('div', { style: unitStyle }, text('cost.unit')),
+        h('div', { style: unitRowStyle },
+          h('span', { style: unitStyle }, text('cost.unit')),
+          h('span', {
+            style: { ...periodChipStyle, color: periodColor },
+            title: text('cost.peakNote'),
+          },
+            h('span', { style: periodDotStyle }),
+            h('span', null, text('cost.currentPeriod')),
+            h('span', { style: { opacity: 0.55 } }, '·'),
+            h('span', null, text(peakNow ? 'cost.peak' : 'cost.offPeak')))),
         prices === null
-          ? h('div', { style: { ...noteStyle, borderTop: 'none' } }, text('cost.unavailable'))
-          : h('div', { style: tableStyle },
-            h('span', null),
-            h('span', { style: headStyle }, text('cost.offPeak')),
-            h('span', { style: headStyle }, text('cost.peak')),
-            h('span', { style: rowLabelStyle }, text('cost.inputHit')),
-            h('span', { style: rowPriceStyle }, formatRate(prices.cacheHit.offPeak)),
-            h('span', { style: rowPriceStyle }, formatRate(prices.cacheHit.peak)),
-            h('span', { style: rowLabelStyle }, text('cost.inputMiss')),
-            h('span', { style: rowPriceStyle }, formatRate(prices.cacheMiss.offPeak)),
-            h('span', { style: rowPriceStyle }, formatRate(prices.cacheMiss.peak)),
-            h('span', { style: rowLabelStyle }, text('cost.output')),
-            h('span', { style: rowPriceStyle }, formatRate(prices.output.offPeak)),
-            h('span', { style: rowPriceStyle }, formatRate(prices.output.peak))),
+          ? h('div', { style: { ...noteStyle, marginTop: 12 } }, text('cost.unavailable'))
+          : h('div', { style: tableCardStyle },
+            h('div', { style: tableHeadStyle },
+              h('span', { style: tableHeadLabelStyle }),
+              h('span', { style: headPriceStyle(!peakNow) }, text('cost.offPeak')),
+              h('span', { style: headPriceStyle(peakNow) }, text('cost.peak'))),
+            priceRow('cacheHit', text('cost.inputHit'), prices.cacheHit),
+            priceRow('cacheMiss', text('cost.inputMiss'), prices.cacheMiss),
+            priceRow('output', text('cost.output'), prices.output)),
         h('div', { style: noteStyle },
           h('div', null, text('cost.peakNote')),
-          h('div', null, text('cost.notBill'))),
+          h('div', { style: { marginTop: 2, opacity: 0.85 } }, text('cost.notBill'))),
         h('div', { style: footerStyle },
           h('button', {
             type: 'button',
@@ -253,18 +406,31 @@ window.__ModuleLoader__.load({
               opacity: refreshing ? 0.65 : 1,
               cursor: refreshing ? 'progress' : 'pointer',
             },
-          }, text(refreshing ? 'cost.updating' : 'cost.update')),
+          },
+            h(RefreshIcon),
+            h('span', null, text(refreshing ? 'cost.updating' : 'cost.update'))),
           h('span', {
             style: {
               ...updateStatusStyle,
-              color: status?.kind === 'error'
-                ? 'var(--dsw-alias-state-error-primary)'
-                : status?.kind === 'success'
-                  ? 'var(--dsw-alias-state-success-primary)'
-                  : 'var(--dsw-alias-label-caption)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 5,
+              color: statusColor,
             },
             title: status?.detail,
-          }, status?.message ?? text('cost.updateSource'))))
+          },
+            h('span', {
+              style: {
+                width: 6,
+                height: 6,
+                marginTop: 5,
+                borderRadius: '50%',
+                background: statusColor,
+                flex: 'none',
+              },
+            }),
+            h('span', { style: { flex: 1, minWidth: 0 } },
+              status?.message ?? text('cost.updateSource')))))
       return ReactDOM.createPortal(panel, document.body)
     }
 
@@ -373,7 +539,7 @@ window.__ModuleLoader__.load({
         }
         const rect = buttonRef.current?.getBoundingClientRect()
         if (rect === undefined) return
-        const width = Math.min(360, Math.max(260, window.innerWidth - 16))
+        const width = Math.min(380, Math.max(280, window.innerWidth - 16))
         const left = Math.max(8, Math.min(rect.left + rect.width - width, window.innerWidth - width - 8))
         setPosition({
           left,
