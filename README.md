@@ -28,6 +28,7 @@
 - 按每次成功请求的实际 usage 计费。
 - 缓存命中、缓存未命中、缓存写入和输出 Token 分别计价。
 - 切换模型后立即切换价目表。
+- 统计会话内成功的 `web_search` / `web_fetch` 调用，并计入总费用。
 - 点击费用打开当前模型的价格清单。
 - 手动「更新价格」抓取官方最新价格。
 - 首次运行无本地缓存时自动抓取官方价格。
@@ -75,7 +76,7 @@ DSH 的 **Add plugin** 支持直接填写 Git 仓库地址。
 1. 下载 Release 安装包：
 
    ```text
-   https://github.com/Zeromixis/deepseek-cost/releases/download/v1.6.1/deepseek-cost-1.6.1.tgz
+   https://github.com/Zeromixis/deepseek-cost/releases/download/v1.7.0/deepseek-cost-1.7.0.tgz
    ```
 
 2. 打开 **Plugins → Add plugin**。
@@ -86,12 +87,12 @@ DSH 的 **Add plugin** 支持直接填写 Git 仓库地址。
 
 适合把安装包用 U 盘或网盘带到另一台电脑。
 
-1. 把 `deepseek-cost-1.6.1.tgz` 复制到目标电脑。
+1. 把 `deepseek-cost-1.7.0.tgz` 复制到目标电脑。
 2. 打开 **Plugins → Add plugin**。
 3. 填写 tarball 的**绝对路径**，例如：
 
    ```text
-   C:\Users\你的用户名\Downloads\deepseek-cost-1.6.1.tgz
+   C:\Users\你的用户名\Downloads\deepseek-cost-1.7.0.tgz
    ```
 
 4. 点击 **Install**。
@@ -189,6 +190,25 @@ DeepSeek 官方价格区分工作日高峰和空闲时段：
 
 插件按每次请求发生的时间选择对应单价。法定节假日未单独排除，估算结果可能和最终账单有少量差异。
 
+### 网页搜索与抓取
+
+DeepSeek 的网页接口按成功请求计费：
+
+| 接口 | 价格 |
+| --- | --- |
+| Search | 5 元 / 1,000 次成功请求 |
+| Fetch | 5 元 / 1,000 次成功请求 |
+
+当前官方规则为暂免，至北京时间 `2026-11-01 00:00` 起按次收费；插件会解析官方页面上的价格和免费截止时间。
+
+统计口径：
+
+- `web_search`：按工具调用中实际发起的不同 query 数量计数；重复 query 只算一次。
+- `web_fetch`：每次成功抓取算一次；HTTP 4xx/5xx 和非成功结果不计。
+- 工具调用报错（超时、provider 不可用、URL 被拦截等）不计。
+- 网页调用费用会计入面板顶部的「本会话费用」，并在价格面板中单独显示搜索/抓取次数和网页费用。
+- 官方仍在免费期时，会显示「官方暂免至 …」，费用为 0；免费期结束后自动开始计费。
+
 ## 价格来源与计算方式
 
 价格来源：
@@ -200,14 +220,22 @@ https://api-docs.deepseek.com/zh-cn/quick_start/pricing/
 计算方式：
 
 ```text
-费用 =
+总费用 =
+  模型费用
+  + 网页调用费用
+
+模型费用 =
   缓存未命中输入 Token × 未命中单价
   + 缓存命中输入 Token × 命中单价
   + 缓存写入 Token × 写入单价
   + 输出 Token × 输出单价
+
+网页调用费用 =
+  web_search 请求数 × 单次价格
+  + web_fetch 请求数 × 单次价格
 ```
 
-所有单价均为人民币 / 百万 Token。
+模型单价为人民币 / 百万 Token；网页接口单价为人民币 / 次。
 
 说明：
 

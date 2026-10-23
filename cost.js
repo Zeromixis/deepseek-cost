@@ -37,14 +37,40 @@ const MODEL_NAMES = new Map([
   ['deepseek-v4-pro', 'DeepSeek-V4-Pro'],
 ])
 
+const DEFAULT_WEB_PRICING = {
+  searchPerRequest: 5 / 1000,
+  fetchPerRequest: 5 / 1000,
+  freeUntil: Date.parse('2026-11-01T00:00:00+08:00'),
+}
+
 /** Prices fetched from the official page override the built-in defaults. */
 let fetchedPricing = null
+let fetchedWebPricing = null
 /** Whether the active pricing table came from a durable local cache. */
 let pricingCached = false
 
 /** Record whether the active table was restored from the local cache. */
 export function markPricingCached(value) {
   pricingCached = value === true
+}
+
+/** Install Search/Fetch pricing fetched from the official page. */
+export function setFetchedWebPricing(web) {
+  if (web === null || typeof web !== 'object') return false
+  const read = value => typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? value
+    : undefined
+  const searchPerRequest = read(web.searchPerRequest)
+  const fetchPerRequest = read(web.fetchPerRequest)
+  const freeUntil = read(web.freeUntil)
+  if (searchPerRequest === undefined || fetchPerRequest === undefined || freeUntil === undefined) return false
+  fetchedWebPricing = { searchPerRequest, fetchPerRequest, freeUntil }
+  return true
+}
+
+/** Current Search/Fetch pricing, falling back to the documented defaults. */
+export function webPricing() {
+  return fetchedWebPricing ?? DEFAULT_WEB_PRICING
 }
 
 const SHANGHAI_TIME = new Intl.DateTimeFormat('en-US', {
@@ -176,10 +202,33 @@ function streamUsage(stream) {
   return undefined
 }
 
+function searchUnits(args) {
+  try {
+    const parsed = JSON.parse(args)
+    if (!Array.isArray(parsed?.queries)) return 1
+    const unique = new Set(parsed.queries
+      .filter(query => typeof query === 'string' && query.trim().length > 0)
+      .map(query => query.trim()))
+    return Math.max(1, unique.size)
+  } catch {
+    return 1
+  }
+}
+
+function toolCallId(event) {
+  return event.data?.message?.toolCallId
+    ?? event.data?.message?.source?.callId
+    ?? event.data?.callId
+}
+
 /** Fresh projection state; pending is the route captured by the latest header. */
 export function createCostState() {
   return {
-    totalCny: 0,
+    modelCostCny: 0,
+    webCostCny: 0,
+    webSearchRequests: 0,
+    webFetchRequests: 0,
+    pendingTools: {},
     requests: 0,
     unpricedRequests: 0,
     lastProvider: null,
@@ -193,6 +242,48 @@ export function createCostState() {
  * billed; a request header snapshots the route and the time-of-day rate.
  */
 export function applyEvent(state, event) {
+  if (event?.type === 'tool/call') {
+    const name = event.data?.name
+    const callId = event.data?.callId
+    if ((name !== 'web_search' && name !== 'web_fetch') || typeof callId !== 'string') return state
+    return {
+      ...state,
+      pendingTools: {
+        ...(state.pendingTools ?? {}),
+        [callId]: {
+          name,
+          units: name === 'web_search' ? searchUnits(event.data?.arguments) : 1,
+        },
+      },
+    }
+  }
+  if (event?.type === 'tool/result') {
+    const callId = toolCallId(event)
+    const pending = callId === undefined ? undefined : state.pendingTools?.[callId]
+    if (pending === undefined) return state
+    const pendingTools = { ...state.pendingTools }
+    delete pendingTools[callId]
+    if (event.data?.error !== undefined || event.data?.message?.isError === true) {
+      return { ...state, pendingTools }
+    }
+    if (pending.name === 'web_fetch') {
+      const statusCode = event.data?.meta?.statusCode
+      if (typeof statusCode === 'number' && statusCode >= 400) {
+        return { ...state, pendingTools }
+      }
+    }
+    const web = webPricing()
+    const chargeable = Number.isFinite(event.time) && event.time >= web.freeUntil
+    const unitPrice = pending.name === 'web_search' ? web.searchPerRequest : web.fetchPerRequest
+    const amount = chargeable ? pending.units * unitPrice : 0
+    return {
+      ...state,
+      pendingTools,
+      webSearchRequests: state.webSearchRequests + (pending.name === 'web_search' ? pending.units : 0),
+      webFetchRequests: state.webFetchRequests + (pending.name === 'web_fetch' ? 1 : 0),
+      webCostCny: Math.round((state.webCostCny + amount) * 1e8) / 1e8,
+    }
+  }
   if (event?.type === 'model/selection') {
     const selection = event.data
     if (typeof selection?.provider !== 'string' || typeof selection?.model !== 'string') return state
@@ -234,7 +325,7 @@ export function applyEvent(state, event) {
   }
   return {
     ...state,
-    totalCny: Math.round((state.totalCny + amount) * 1e8) / 1e8,
+    modelCostCny: Math.round((state.modelCostCny + amount) * 1e8) / 1e8,
     requests: state.requests + 1,
     lastProvider: route.provider,
     lastModel: route.model,
@@ -243,8 +334,19 @@ export function applyEvent(state, event) {
 
 /** Client-visible view; the route snapshot detail stays host-only. */
 export function projectCost(state) {
+  const web = webPricing()
   return {
-    totalCny: state.totalCny,
+    totalCny: Math.round((state.modelCostCny + state.webCostCny) * 1e8) / 1e8,
+    modelCostCny: state.modelCostCny,
+    webCostCny: state.webCostCny,
+    web: {
+      searchRequests: state.webSearchRequests,
+      fetchRequests: state.webFetchRequests,
+      costCny: state.webCostCny,
+      searchPerRequest: web.searchPerRequest,
+      fetchPerRequest: web.fetchPerRequest,
+      freeUntil: web.freeUntil,
+    },
     requests: state.requests,
     unpricedRequests: state.unpricedRequests,
     provider: state.lastProvider,

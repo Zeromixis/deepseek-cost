@@ -11,8 +11,10 @@ import {
   priceList,
   projectCost,
   setFetchedPricing,
+  setFetchedWebPricing,
+  webPricing,
 } from './cost.js'
-import { PRICING_URL, parsePricingPage } from './pricing-source.js'
+import { PRICING_URL, parsePricingPage, parseWebPricingPage } from './pricing-source.js'
 
 export const inject = ['sessionProjections', 'web', 'webServer']
 
@@ -41,8 +43,11 @@ let refreshInFlight = null
 function loadCachedPricing() {
   try {
     const cache = JSON.parse(readFileSync(CACHE_PATH, 'utf8'))
-    if (cache?.version !== 1 || cache.models === undefined) return { loaded: false }
+    if ((cache?.version !== 1 && cache?.version !== 2) || cache.models === undefined) {
+      return { loaded: false }
+    }
     if (!setFetchedPricing(cache.models)) return { loaded: false }
+    if (cache.web !== undefined) setFetchedWebPricing(cache.web)
     markPricingCached(true)
     const updatedAt = typeof cache.updatedAt === 'string' ? Date.parse(cache.updatedAt) : NaN
     return { loaded: true, updatedAt: Number.isFinite(updatedAt) ? updatedAt : 0 }
@@ -52,14 +57,15 @@ function loadCachedPricing() {
   }
 }
 
-function saveCachedPricing(models) {
+function saveCachedPricing(models, web) {
   try {
     mkdirSync(dirname(CACHE_PATH), { recursive: true })
     writeFileSync(CACHE_PATH, JSON.stringify({
-      version: 1,
+      version: 2,
       source: PRICING_URL,
       updatedAt: new Date().toISOString(),
       models,
+      web,
     }, null, 2))
     return { persisted: true, path: CACHE_PATH }
   } catch (error) {
@@ -72,17 +78,21 @@ async function fetchOfficialPricing(ctx) {
   if (result.statusCode !== 200) {
     throw new Error(`官方价格页返回 HTTP ${result.statusCode}`)
   }
-  const models = parsePricingPage(result.body?.content)
+  const content = result.body?.content
+  const models = parsePricingPage(content)
   if (models === null) {
     throw new Error('官方价格页格式已变化，无法解析')
   }
   if (!setFetchedPricing(models)) {
     throw new Error('抓取到的价格表无效')
   }
-  const saved = saveCachedPricing(models)
+  const web = parseWebPricingPage(content)
+  if (web !== null) setFetchedWebPricing(web)
+  const saved = saveCachedPricing(models, web ?? webPricing())
   markPricingCached(saved.persisted)
   return {
     models,
+    web: web ?? webPricing(),
     persisted: saved.persisted,
     updatedAt: new Date().toISOString(),
   }
@@ -120,7 +130,7 @@ export function apply(ctx) {
       viewSchema: passthroughSchema,
       view: projectCost,
     },
-    stateVersion: 4,
+    stateVersion: 5,
   }), 'deepseek-cost: session cost projection')
 
   ctx.effect(() => ctx.on('session/event', (_session, event) => {

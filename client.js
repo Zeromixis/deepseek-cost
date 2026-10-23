@@ -24,6 +24,9 @@ window.__ModuleLoader__.load({
       'cost.peakNote': '高峰：北京时间周一至周五 09:00–12:00、14:00–18:00。',
       'cost.unavailable': '当前模型暂无价格清单。',
       'cost.notBill': '仅为估算，非最终账单。',
+      'cost.webUsage': '网页调用',
+      'cost.webCounts': '搜索 {search} 次 · 抓取 {fetch} 次',
+      'cost.webFree': '官方暂免至 {date}',
       'cost.update': '更新价格',
       'cost.updating': '更新中…',
       'cost.updated': '价格已更新并保存到本地，后续请求按新价格计费。',
@@ -224,6 +227,40 @@ window.__ModuleLoader__.load({
       fontSize: 11,
       lineHeight: '16px',
     }
+    const webCardStyle = {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 2,
+      marginTop: 10,
+      padding: '8px 10px',
+      border: '1px solid var(--dsw-alias-border-l1)',
+      borderRadius: 8,
+      background: 'var(--dsw-alias-bg-layer-1)',
+    }
+    const webHeaderStyle = {
+      display: 'flex',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      gap: 8,
+    }
+    const webTitleStyle = {
+      color: 'var(--dsw-alias-label-primary)',
+      fontSize: 12,
+      fontWeight: 600,
+      lineHeight: '17px',
+    }
+    const webValueStyle = {
+      color: 'var(--dsw-alias-label-primary)',
+      fontSize: 11,
+      fontVariantNumeric: 'tabular-nums',
+      lineHeight: '16px',
+      textAlign: 'right',
+    }
+    const webMetaStyle = {
+      color: 'var(--dsw-alias-label-caption)',
+      fontSize: 10,
+      lineHeight: '15px',
+    }
     const footerStyle = {
       display: 'flex',
       alignItems: 'center',
@@ -284,6 +321,19 @@ window.__ModuleLoader__.load({
       const minutes = hour * 60 + minute
       return (minutes >= 9 * 60 && minutes < 12 * 60)
         || (minutes >= 14 * 60 && minutes < 18 * 60)
+    }
+
+    const SHANGHAI_DATE = new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+
+    function formatDate(time) {
+      return Number.isFinite(time)
+        ? SHANGHAI_DATE.format(new Date(time)).replaceAll('/', '-')
+        : '—'
     }
 
     function RefreshIcon() {
@@ -351,6 +401,9 @@ window.__ModuleLoader__.load({
         : status?.kind === 'success'
           ? 'var(--dsw-alias-state-success-primary)'
           : 'var(--dsw-alias-label-caption)'
+      const web = cost.web
+      const webCalls = (web?.searchRequests ?? 0) + (web?.fetchRequests ?? 0)
+      const webFree = web !== undefined && web.freeUntil > Date.now()
 
       const panel = h('div', {
         ref: panelRef,
@@ -393,6 +446,22 @@ window.__ModuleLoader__.load({
             priceRow('cacheHit', text('cost.inputHit'), prices.cacheHit),
             priceRow('cacheMiss', text('cost.inputMiss'), prices.cacheMiss),
             priceRow('output', text('cost.output'), prices.output)),
+        webCalls > 0 && h('div', { style: webCardStyle },
+          h('div', { style: webHeaderStyle },
+            h('span', { style: webTitleStyle }, text('cost.webUsage')),
+            h('span', {
+              style: {
+                ...webValueStyle,
+                color: webFree ? 'var(--dsw-alias-state-success-primary)' : 'var(--dsw-alias-label-primary)',
+              },
+            }, webFree
+              ? text('cost.webFree', { date: formatDate(web.freeUntil) })
+              : formatCny(web.costCny))),
+          h('div', { style: webMetaStyle },
+            text('cost.webCounts', {
+              search: web.searchRequests,
+              fetch: web.fetchRequests,
+            }))),
         h('div', { style: noteStyle },
           h('div', null, text('cost.peakNote')),
           h('div', { style: { marginTop: 2, opacity: 0.85 } }, text('cost.notBill'))),

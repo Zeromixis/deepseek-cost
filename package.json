@@ -1,8 +1,8 @@
 {
   "name": "deepseek-cost",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "type": "module",
-  "description": "在输入框下方的 Token 用量旁显示以人民币估算的会话费用，点击可查看当前模型的价格清单并从官方页面更新价格。",
+  "description": "在输入框下方显示会话人民币费用，计入模型 Token 与网页搜索/抓取费用，点击可查看当前模型价目表并从官方页面更新价格。",
   "license": "MIT",
   "repository": {
     "type": "git",
